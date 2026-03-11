@@ -28,61 +28,56 @@ Or pi will auto-load it when your task matches the description.
 
 ### `gsd-onboard`
 
-**Onboard any project with existing planning history into GSD-2 so `/gsd auto` runs cleanly from the right milestone — with ground-truth completion markers, full vision coverage, self-contained task plans, and a test-fix loop on every slice.**
+**Onboard any project with existing planning history into GSD-2 so `/gsd auto` runs cleanly from exactly the right milestone.**
 
-Works with `.planning` directories, BMAD epics, Jira exports, Notion docs, sprint files, or any other planning format.
+Works with any project and any planning format — `.planning` directories, BMAD epics, GitHub issues, Jira exports, Notion docs, sprint files, a plain README, or no planning docs at all.
 
 #### What it does
 
-**Detects your situation** — checks what planning artifacts exist and whether [`jonathancostin/gsd-migrate`](https://github.com/jonathancostin/gsd-migrate) is installed, then takes the right path:
+**Detects your situation** — checks what planning artifacts and code exist, identifies the test runner and type check commands, then takes the right path:
 
-| Situation | Action |
+| Situation | Path |
 |---|---|
-| `.planning/` directory exists | Runs `/gsd migrate` (installs if needed), then verifies ground truth and hardens output |
-| BMAD `_bmad-output/` or epic files | Full manual migration using GSD templates |
-| Jira / Notion / markdown plans | Full manual migration using GSD templates |
-| Existing `.gsd/` that's messy or partial | Audit and fix in place |
+| `.planning/` directory exists + `gsd-migrate` installed | **Path A** — automated migration |
+| `.planning/` exists, `gsd-migrate` not installed | Installs it, then Path A |
+| Any planning docs (epics, PRD, backlog, issues) | **Path B** — manual migration |
+| `.gsd/` already exists but is messy or partial | **Path C** — audit and fix |
+| No planning docs at all | **Path D** — bootstrap from scratch |
 
 **Verifies ground truth before trusting any completion marker:**
 
-- Counts summary files vs plan files per phase — a phase is DONE only when every plan has a matching summary
-- Cross-checks migrated `[x]`/`[ ]` markers against filesystem evidence — fixes any that are wrong
-- Detects orphaned code (code written without GSD tracking) — verifies ACs and writes correct summaries or task plans
-- Validates roadmap format with the parser immediately after writing each roadmap file
+- Counts summary files vs plan files per phase — DONE only when every plan has a matching summary
+- Cross-checks migrated `[x]`/`[ ]` markers against filesystem evidence and fixes wrong ones
+- Detects orphaned code (code written without GSD tracking) — checks ACs and writes correct summaries or task plans
+- Validates roadmap format with the parser immediately after each roadmap file is written
 
 **Applies post-migration hardening:**
 
-- Writes `SUMMARY.md` for all completed milestones — the #1 routing bug that activates the wrong milestone
+- Writes `MILESTONE-SUMMARY.md` for completed milestones — the #1 routing bug that activates the wrong milestone
 - Sets `depends_on` frontmatter so GSD starts at exactly the right milestone
-- Detects and splits oversized slices (>5 active tasks) before enrichment
-- Enforces task plan self-containment at write-time — every `T##-PLAN.md` must have Steps, Must-Haves, and Verification before it's accepted
-- Adds a "Test, Fix, and Confirm" task to every implementation slice — no slice is done until the full test suite passes
+- Detects and splits oversized slices (> 5 active tasks) before enrichment so files land in final locations
+- Enforces task plan self-containment at write-time — every `T##-PLAN.md` must have Steps, Must-Haves, and Verification
+- Adds a "Test, Fix, and Confirm" task to every implementation slice using the project's actual test runner
 
 **Runs an audit-first implementation approach:**
 
-- Adds a dedicated audit slice as the FIRST slice of the active milestone — no implementation begins until `IMPLEMENTATION-STATUS.md` is produced
-- Per-story audit checks: code exists AND ACs fully covered AND wired into main pipeline AND test exists
-- Marks each story VERIFIED / PARTIAL / MISSING with file:line evidence — not guesses
-- Updates all downstream task plans: VERIFIED stories get skip notes, PARTIAL gaps get confirmed, MISSING stories get implementation tasks
-- Vision coverage cross-check: confirms every source story has a corresponding GSD task (catches planning gaps before they become shipping gaps)
+- Adds a dedicated audit slice as the first pending slice — no implementation until `IMPLEMENTATION-STATUS.md` is produced
+- Per-requirement audit: code exists AND ACs fully covered AND wired into main execution path AND test exists
+- Marks each requirement VERIFIED / PARTIAL / MISSING with file:line evidence
+- Updates downstream task plans: VERIFIED requirements get skip notes, PARTIAL gaps get confirmed, MISSING requirements get implementation tasks
+- Vision coverage cross-check: confirms every source requirement has a GSD task (catches planning gaps before they ship as missing features)
 
 **Validates before handoff:**
 
-- Parser check — all roadmap slice entries parse correctly
-- Self-containment check — every `T##-PLAN.md` has Steps, Must-Haves, Verification (zero stubs)
-- Missing summary check — no completed milestone is missing its `SUMMARY.md`
-- Routing simulation — GSD activates the intended milestone
+- Roadmap parser check — all slice entries parse correctly
+- Self-containment check — every `T##-PLAN.md` has Steps, Must-Haves, Verification
+- Missing summary check — no complete milestone is missing its summary
+- Routing simulation — confirms GSD activates the intended milestone
 - Test-fix loop coverage — every pending slice has a fix-and-confirm task
 
-#### Key improvements over v1
+#### Works with any stack
 
-- **Ground truth verification** — filesystem beats migration heuristics; markers are checked not assumed
-- **Orphaned code detection** — handles code written without GSD tracking (common when sessions end mid-task)
-- **Audit-first** — `IMPLEMENTATION-STATUS.md` produced before any implementation begins; downstream tasks reference it
-- **Per-story wiring check** — verifies code is connected to the main pipeline, not just that a file exists
-- **Write-time self-containment enforcement** — checklist applied when writing task plans, not discovered at Phase 5
-- **Test-fix loop on every slice** — implementation without a fix loop produces half-working features
-- **Vision coverage cross-check** — catches BMAD stories that never made it into `.planning` phases
+The skill discovers your project's test runner and type check commands in Phase 0 and uses them consistently — not hardcoded Node.js/TypeScript commands. Works the same for Python + pytest, Go + go test, Rust + cargo test, or any other stack.
 
 #### Related
 
