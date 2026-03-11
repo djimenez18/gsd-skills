@@ -52,6 +52,29 @@ cat Makefile 2>/dev/null | grep -E "^lint|^check|^type"
 ```
 Record this too.
 
+**5. What skills, agents, and tool integrations exist?**
+```bash
+# Installed GSD skills
+ls ~/.gsd/agent/skills/ 2>/dev/null
+# Project-local agents/skills (BMAD, custom)
+ls ~/.agents/skills/ 2>/dev/null
+find . -maxdepth 4 \( -name "agent-manifest.csv" -o -name "agents" -type d \) \
+  2>/dev/null | grep -v node_modules | grep -v ".git"
+# MCP servers or tool bridges
+find . -maxdepth 4 -name "*.ts" -path "*/mcp/*" 2>/dev/null | grep -v node_modules
+find . -maxdepth 4 -name "*.py" -path "*/mcp/*" 2>/dev/null | grep -v node_modules
+# GSD preferences (global and project)
+cat ~/.gsd/preferences.md 2>/dev/null
+cat .gsd/preferences.md 2>/dev/null
+```
+Record:
+- Which skills are installed and relevant to this project
+- Whether an agent manifest exists (for party mode / multi-agent workflows)
+- What MCP servers or external tool integrations exist
+- Current GSD preferences (if any)
+
+These will be preserved or configured in Phase 3.6.
+
 ---
 
 Based on your findings, take the matching path:
@@ -458,6 +481,58 @@ depends_on:
 ```
 
 Format rules: YAML frontmatter at top of file, 2-space indent for list items, milestone IDs uppercase (M001 not m001).
+
+### 3.6 Preserve skills, agents, and tool integrations
+
+If Phase 0 discovered installed skills, agent manifests, or MCP/tool integrations, make sure GSD auto can use them.
+
+**Write or update `.gsd/preferences.md`:**
+
+```bash
+cat ~/.gsd/agent/extensions/gsd/docs/preferences-reference.md
+```
+
+Configure preferences based on what exists:
+
+1. **Skills** — Add relevant skills to `prefer_skills` or `skill_rules`. If multi-agent skills exist (like party mode), add rules for when to activate them:
+   ```yaml
+   skill_rules:
+     - when: designing architecture or choosing between implementation approaches
+       use:
+         - bmad-party-mode
+     - when: reviewing completed code
+       use:
+         - bmad-code-review
+   ```
+
+2. **Agent manifests** — If an agent manifest exists (e.g. `_bmad/_config/agent-manifest.csv`), add a custom instruction telling GSD auto where to find it and when to use party mode:
+   ```yaml
+   custom_instructions:
+     - "Agent manifest at _bmad/_config/agent-manifest.csv — load for party mode"
+     - "Use party mode for design decisions, architecture, cross-module features"
+   ```
+
+3. **MCP servers / tool integrations** — Document available integrations in custom instructions so GSD auto knows what tools are available:
+   ```yaml
+   custom_instructions:
+     - "MCP servers available: [list servers]. Initialized via [path]. Tasks needing [email/calendar/GitHub] access should note this."
+   ```
+
+4. **Skill discovery** — Set to `auto` if you want GSD to find and apply skills without prompting:
+   ```yaml
+   skill_discovery: auto
+   ```
+
+**Party mode guidelines for task plans:**
+
+When writing task plans for features that benefit from multi-perspective thinking (architecture decisions, cross-module features, UX design), add this to the Steps section:
+
+```markdown
+> **PARTY MODE RECOMMENDED:** This task involves [architecture/cross-module/UX] decisions.
+> Activate party mode before implementation to get cross-functional input from the team.
+```
+
+Skip the annotation for mechanical tasks (running tests, single-file fixes, config changes).
 
 ---
 
