@@ -492,47 +492,60 @@ If Phase 0 discovered installed skills, agent manifests, or MCP/tool integration
 cat ~/.gsd/agent/extensions/gsd/docs/preferences-reference.md
 ```
 
+**Important: Use absolute paths for skills outside `~/.gsd/agent/skills/`.** GSD's skill resolver only searches `~/.gsd/agent/skills/` and `.pi/agent/skills/` for bare names. Skills installed elsewhere (e.g. `~/.agents/skills/`) must use full `~/` paths or they'll show as "⚠ not found":
+
+```yaml
+# ❌ Won't resolve — bare name not in ~/.gsd/agent/skills/
+prefer_skills:
+  - bmad-party-mode
+
+# ✅ Will resolve — absolute path with ~ expansion
+prefer_skills:
+  - ~/.agents/skills/bmad-party-mode
+```
+
 Configure preferences based on what exists:
 
-1. **Skills** — Add relevant skills to `prefer_skills` or `skill_rules`. If multi-agent skills exist (like party mode), add rules for when to activate them:
+1. **Skills** — Add relevant skills to `prefer_skills` or `skill_rules`:
    ```yaml
+   prefer_skills:
+     - ~/.agents/skills/bmad-party-mode
+     - ~/.agents/skills/bmad-code-review
    skill_rules:
      - when: designing architecture or choosing between implementation approaches
        use:
-         - bmad-party-mode
+         - ~/.agents/skills/bmad-party-mode
      - when: reviewing completed code
        use:
-         - bmad-code-review
+         - ~/.agents/skills/bmad-code-review
    ```
 
-2. **Agent manifests** — If an agent manifest exists (e.g. `_bmad/_config/agent-manifest.csv`), add a custom instruction telling GSD auto where to find it and when to use party mode:
+2. **Multi-agent / party mode auto-approve** — Party mode is interactive by default (it waits for user input). During GSD auto, there's no user. Add this custom instruction so party mode runs as non-interactive deliberation instead of blocking:
    ```yaml
    custom_instructions:
-     - "Agent manifest at _bmad/_config/agent-manifest.csv — load for party mode"
-     - "Use party mode for design decisions, architecture, cross-module features"
+     - "PARTY MODE AUTO-APPROVE RULE: During GSD auto execution (no user present), run party mode as non-interactive deliberation. Load the agent manifest, generate 2-3 relevant agent perspectives on the approach, synthesize the consensus into a concrete decision, then continue implementing immediately — do NOT wait for user input. Document the deliberation and decision in the task summary under a '## Party Mode Deliberation' section. The user trusts the team's consensus and wants auto-mode to keep moving."
    ```
 
-3. **MCP servers / tool integrations** — Document available integrations in custom instructions so GSD auto knows what tools are available:
+   During interactive sessions (user present), party mode runs normally with full conversation flow.
+
+3. **Agent manifests** — If an agent manifest exists (e.g. `_bmad/_config/agent-manifest.csv`), tell the agent where to find it:
    ```yaml
    custom_instructions:
-     - "MCP servers available: [list servers]. Initialized via [path]. Tasks needing [email/calendar/GitHub] access should note this."
+     - "Agent manifest at _bmad/_config/agent-manifest.csv — load for party mode deliberation"
    ```
 
-4. **Skill discovery** — Set to `auto` if you want GSD to find and apply skills without prompting:
+4. **MCP servers / tool integrations** — Document available integrations so GSD auto knows what tools are available:
+   ```yaml
+   custom_instructions:
+     - "MCP servers available: [list servers]. Initialized via [path]."
+   ```
+
+5. **Skill discovery** — Set to `auto` if you want GSD to find and apply skills without prompting:
    ```yaml
    skill_discovery: auto
    ```
 
-**Party mode guidelines for task plans:**
-
-When writing task plans for features that benefit from multi-perspective thinking (architecture decisions, cross-module features, UX design), add this to the Steps section:
-
-```markdown
-> **PARTY MODE RECOMMENDED:** This task involves [architecture/cross-module/UX] decisions.
-> Activate party mode before implementation to get cross-functional input from the team.
-```
-
-Skip the annotation for mechanical tasks (running tests, single-file fixes, config changes).
+**Do NOT add party mode annotations to task plans.** The preferences mechanism handles skill routing. Task plans must stay self-contained execution specs — adding "activate party mode" annotations violates self-containment and wastes tokens on tasks where the preferences already route correctly.
 
 ---
 
