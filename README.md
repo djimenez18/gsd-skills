@@ -34,7 +34,7 @@ Works with any project and any planning format — `.planning` directories, BMAD
 
 #### What it does
 
-**Detects your situation** — checks what planning artifacts and code exist, identifies the test runner and type check commands, then takes the right path:
+**Detects your situation** — checks what planning artifacts and code exist, identifies the test runner and type check commands, discovers installed skills and tool integrations, then takes the right path:
 
 | Situation | Path |
 |---|---|
@@ -59,6 +59,13 @@ Works with any project and any planning format — `.planning` directories, BMAD
 - Enforces task plan self-containment at write-time — every `T##-PLAN.md` must have Steps, Must-Haves, and Verification
 - Adds a "Test, Fix, and Confirm" task to every implementation slice using the project's actual test runner
 
+**Preserves skills, agents, and tool integrations:**
+
+- Discovers installed skills (GSD, BMAD, custom) and configures `.gsd/preferences.md` so GSD auto can find and use them
+- Documents agent manifests and MCP server integrations in preferences so they're available during execution
+- Configures multi-agent skills (like party mode) for **auto-approve during GSD auto** — generates multi-perspective deliberation, synthesizes consensus, continues executing without waiting for user input
+- Uses absolute `~/` paths for skills outside `~/.gsd/agent/skills/` — bare names only resolve from two directories
+
 **Runs an audit-first implementation approach:**
 
 - Adds a dedicated audit slice as the first pending slice — no implementation until `IMPLEMENTATION-STATUS.md` is produced
@@ -78,6 +85,10 @@ Works with any project and any planning format — `.planning` directories, BMAD
 #### Works with any stack
 
 The skill discovers your project's test runner and type check commands in Phase 0 and uses them consistently — not hardcoded Node.js/TypeScript commands. Works the same for Python + pytest, Go + go test, Rust + cargo test, or any other stack.
+
+#### Party mode + GSD auto
+
+If your project uses multi-agent skills (like BMAD party mode), the skill configures them for **non-interactive deliberation** during GSD auto. The agent loads the agent manifest, generates perspectives from 2-3 relevant agents, synthesizes the consensus, documents the decision in the task summary, and keeps executing — no pause for user input. During interactive sessions, party mode runs normally with full conversation flow.
 
 #### Related
 
